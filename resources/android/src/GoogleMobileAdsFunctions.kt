@@ -174,7 +174,14 @@ object GoogleMobileAdsFunctions {
                 if (position == "top") {
                     params.topMargin = systemBarInsets?.top ?: 0
                 } else {
-                    params.bottomMargin = systemBarInsets?.bottom ?: 0
+                    // The system-bar inset alone only clears the gesture/nav bar,
+                    // not the host app's own bottom tab bar sitting above it —
+                    // this Kotlin code has no visibility into that Compose/SwiftUI
+                    // layout to measure it exactly. Material 3's NavigationBar
+                    // spec (80dp) is used as a reasonable estimate; a host with a
+                    // taller or shorter bottom bar will need to adjust this.
+                    val estimatedBottomBarHeight = (80 * activity.resources.displayMetrics.density).toInt()
+                    params.bottomMargin = (systemBarInsets?.bottom ?: 0) + estimatedBottomBarHeight
                 }
 
                 (activity.window.decorView.rootView as? ViewGroup)?.addView(adView, params)
