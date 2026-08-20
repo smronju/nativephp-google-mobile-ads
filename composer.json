@@ -1,17 +1,25 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "bhargavdetroja/nativephp-google-mobile-ads",
-    "description": "Google Mobile Ads (AdMob) plugin for NativePHP Mobile — Banner, Interstitial, Rewarded, and App Open ads on Android and iOS.",
+    "name": "smronju/nativephp-google-mobile-ads",
+    "description": "Google Mobile Ads (AdMob) plugin for NativePHP Mobile — Banner, Interstitial, Rewarded, and App Open ads on Android and iOS. Fork of bhargavdetroja/nativephp-google-mobile-ads with the PHP→native bridge actually wired up for native-UI-only (EDGE) apps.",
     "type": "nativephp-plugin",
     "keywords": ["nativephp", "admob", "google-mobile-ads", "ads", "mobile", "laravel", "android", "ios"],
-    "homepage": "https://github.com/bhargavdetroja/nativephp-google-mobile-ads",
+    "homepage": "https://github.com/smronju/nativephp-google-mobile-ads",
     "license": "MIT",
     "authors": [
         {
             "name": "Bhargav Detroja",
             "homepage": "https://github.com/bhargavdetroja"
+        },
+        {
+            "name": "Mohammad Shoriful Islam Ronju",
+            "email": "smronju@gmail.com"
         }
     ],
+    "support": {
+        "issues": "https://github.com/smronju/nativephp-google-mobile-ads/issues",
+        "source": "https://github.com/smronju/nativephp-google-mobile-ads"
+    },
     "require": {
         "php": "^8.2",
         "nativephp/mobile": "^3.0|^4.0"

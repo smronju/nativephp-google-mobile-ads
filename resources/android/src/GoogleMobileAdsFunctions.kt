@@ -25,7 +25,7 @@ import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
 import com.nativephp.mobile.bridge.BridgeFunction
 import com.nativephp.mobile.bridge.BridgeResponse
-import com.nativephp.mobile.utils.WebViewProvider
+import com.nativephp.mobile.utils.NativeActionCoordinator
 import org.json.JSONObject
 
 private const val TAG = "GoogleMobileAds"
@@ -43,29 +43,18 @@ private object AdHolder {
 
 // ── Event dispatch helper ─────────────────────────────────────────────────────
 
+/**
+ * Was originally hand-rolled WebView JS injection requiring `WebViewProvider`,
+ * which (a) force-created a hidden WebView via the non-null `getWebView()` on
+ * apps with no WebView anywhere, and (b) never reached
+ * `NativeElementBridge.sendNativeEvent()`, so `#[On(...)]` listeners on a
+ * native-UI-only screen never fired no matter what. `NativeActionCoordinator`
+ * is the core's own dispatcher — same one Camera/Microphone use — and already
+ * handles both the WebView-optional case and the native element event queue.
+ */
 private fun FragmentActivity.dispatchAdEvent(eventClass: String, payload: Map<String, Any>) {
     val payloadJson = JSONObject(payload).toString()
-    val escapedEvent = eventClass.replace("\\", "\\\\")
-
-    val js = """
-        (function () {
-            const payload = $payloadJson;
-            const detail = { event: "$escapedEvent", payload };
-            document.dispatchEvent(new CustomEvent("native-event", { detail }));
-            if (window.Livewire && typeof window.Livewire.dispatch === 'function') {
-                window.Livewire.dispatch("native:$escapedEvent", payload);
-            }
-            fetch('/_native/api/events', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ event: "$escapedEvent", payload })
-            }).catch(e => console.error("AdEvent dispatch error:", e.message));
-        })();
-    """.trimIndent()
-
-    runOnUiThread {
-        (this as? WebViewProvider)?.getWebView()?.evaluateJavascript(js, null)
-    }
+    NativeActionCoordinator.dispatchEvent(this, eventClass, payloadJson)
 }
 
 // ── Full-screen callback factory ──────────────────────────────────────────────

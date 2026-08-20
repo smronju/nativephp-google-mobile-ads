@@ -46,7 +46,15 @@ class GoogleMobileAds
             return $this;
         }
 
-        $this->bridgeCall('GoogleMobileAds.Initialize', []);
+        // iOS's Initialize bridge function rejects an empty app_id outright;
+        // Android's ignores the parameter entirely — sending it is harmless there.
+        $appId = $this->platform() === 'ios'
+            ? config('google-mobile-ads.ios_app_id')
+            : config('google-mobile-ads.android_app_id');
+
+        $this->bridgeCall('GoogleMobileAds.Initialize', [
+            'app_id' => (string) $appId,
+        ]);
 
         return $this;
     }
@@ -180,12 +188,20 @@ class GoogleMobileAds
 
     protected function platform(): string
     {
-        // NativePHP sets this at runtime; fall back to android for local dev
-        return match (true) {
-            str_contains(php_uname('s'), 'Darwin') && isset($_SERVER['SIMULATOR_DEVICE_NAME']) => 'ios',
-            defined('NATIVEPHP_PLATFORM') => NATIVEPHP_PLATFORM,
-            default => 'android',
-        };
+        // NativePHP exposes this as an env var, never a PHP constant — checking
+        // defined('NATIVEPHP_PLATFORM') is always false, which silently defaulted
+        // every real iOS device to 'android' (only the Simulator branch above it
+        // ever matched 'ios'). Mirrors the same env() check the core itself uses
+        // (see NativeServiceProvider::class).
+        $platform = env('NATIVEPHP_PLATFORM');
+
+        if (in_array($platform, ['ios', 'android'], true)) {
+            return $platform;
+        }
+
+        // Not running inside a native build (e.g. local `php artisan serve`) —
+        // best-effort guess so config/testing still resolves sensibly.
+        return str_contains(php_uname('s'), 'Darwin') ? 'ios' : 'android';
     }
 
     protected function testSlotId(string $slot): string
@@ -213,7 +229,8 @@ class GoogleMobileAds
      */
     private function bridgeCall(string $method, array $params): void
     {
-        // Calls originate from the JS layer via /_native/api/call.
-        // This PHP class is the server-side mirror used by Livewire/controllers.
+        if (function_exists('nativephp_call')) {
+            nativephp_call($method, json_encode($params));
+        }
     }
 }

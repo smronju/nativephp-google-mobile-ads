@@ -101,9 +101,9 @@ import UIKit
                     request: Request()
                 ) { ad, error in
                     if let error = error {
-                        BridgeFunction.dispatchEvent(
+                        LaravelBridge.shared.send?(
                             "NativePHP\\GoogleMobileAds\\Events\\AdFailedToLoad",
-                            payload: [
+                            [
                                 "adType": "interstitial",
                                 "adUnitId": adUnitId,
                                 "errorCode": (error as NSError).code,
@@ -114,9 +114,9 @@ import UIKit
                     }
 
                     AdViewHolder.shared.interstitial = ad
-                    BridgeFunction.dispatchEvent(
+                    LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\AdLoaded",
-                        payload: ["adType": "interstitial", "adUnitId": adUnitId]
+                        ["adType": "interstitial", "adUnitId": adUnitId]
                     )
                 }
             }
@@ -158,9 +158,9 @@ import UIKit
                     request: Request()
                 ) { ad, error in
                     if let error = error {
-                        BridgeFunction.dispatchEvent(
+                        LaravelBridge.shared.send?(
                             "NativePHP\\GoogleMobileAds\\Events\\AdFailedToLoad",
-                            payload: [
+                            [
                                 "adType": "rewarded",
                                 "adUnitId": adUnitId,
                                 "errorCode": (error as NSError).code,
@@ -171,9 +171,9 @@ import UIKit
                     }
 
                     AdViewHolder.shared.rewarded = ad
-                    BridgeFunction.dispatchEvent(
+                    LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\AdLoaded",
-                        payload: ["adType": "rewarded", "adUnitId": adUnitId]
+                        ["adType": "rewarded", "adUnitId": adUnitId]
                     )
                 }
             }
@@ -197,9 +197,9 @@ import UIKit
 
                 ad.present(fromRootViewController: rootVC) {
                     let reward = ad.adReward
-                    BridgeFunction.dispatchEvent(
+                    LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\RewardEarned",
-                        payload: [
+                        [
                             "rewardType": reward.type,
                             "rewardAmount": reward.amount.intValue,
                         ]
@@ -225,9 +225,9 @@ import UIKit
                     request: Request()
                 ) { ad, error in
                     if let error = error {
-                        BridgeFunction.dispatchEvent(
+                        LaravelBridge.shared.send?(
                             "NativePHP\\GoogleMobileAds\\Events\\AdFailedToLoad",
-                            payload: [
+                            [
                                 "adType": "rewarded_interstitial",
                                 "adUnitId": adUnitId,
                                 "errorCode": (error as NSError).code,
@@ -238,9 +238,9 @@ import UIKit
                     }
 
                     AdViewHolder.shared.rewardedInterstitial = ad
-                    BridgeFunction.dispatchEvent(
+                    LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\AdLoaded",
-                        payload: ["adType": "rewarded_interstitial", "adUnitId": adUnitId]
+                        ["adType": "rewarded_interstitial", "adUnitId": adUnitId]
                     )
                 }
             }
@@ -264,9 +264,9 @@ import UIKit
 
                 ad.present(fromRootViewController: rootVC, userDidEarnRewardHandler: {
                     let reward = ad.adReward
-                    BridgeFunction.dispatchEvent(
+                    LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\RewardEarned",
-                        payload: [
+                        [
                             "rewardType": reward.type,
                             "rewardAmount": reward.amount.intValue,
                         ]
@@ -292,9 +292,9 @@ import UIKit
                     request: Request()
                 ) { ad, error in
                     if let error = error {
-                        BridgeFunction.dispatchEvent(
+                        LaravelBridge.shared.send?(
                             "NativePHP\\GoogleMobileAds\\Events\\AdFailedToLoad",
-                            payload: [
+                            [
                                 "adType": "app_open",
                                 "adUnitId": adUnitId,
                                 "errorCode": (error as NSError).code,
@@ -305,9 +305,9 @@ import UIKit
                     }
 
                     AdViewHolder.shared.appOpen = ad
-                    BridgeFunction.dispatchEvent(
+                    LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\AdLoaded",
-                        payload: ["adType": "app_open", "adUnitId": adUnitId]
+                        ["adType": "app_open", "adUnitId": adUnitId]
                     )
                 }
             }
@@ -346,16 +346,16 @@ private class BannerEventDelegate: NSObject, BannerViewDelegate {
     }
 
     func bannerViewDidReceiveAd(_ bannerView: BannerView) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdLoaded",
-            payload: ["adType": "banner", "adUnitId": adUnitId]
+            ["adType": "banner", "adUnitId": adUnitId]
         )
     }
 
     func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdFailedToLoad",
-            payload: [
+            [
                 "adType": "banner",
                 "adUnitId": adUnitId,
                 "errorCode": (error as NSError).code,
@@ -365,30 +365,30 @@ private class BannerEventDelegate: NSObject, BannerViewDelegate {
     }
 
     func bannerViewWillPresentScreen(_ bannerView: BannerView) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdOpened",
-            payload: ["adType": "banner"]
+            ["adType": "banner"]
         )
     }
 
     func bannerViewDidDismissScreen(_ bannerView: BannerView) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdClosed",
-            payload: ["adType": "banner"]
+            ["adType": "banner"]
         )
     }
 
     func bannerViewDidRecordImpression(_ bannerView: BannerView) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdImpression",
-            payload: ["adType": "banner"]
+            ["adType": "banner"]
         )
     }
 
     func bannerViewDidRecordClick(_ bannerView: BannerView) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdClicked",
-            payload: ["adType": "banner"]
+            ["adType": "banner"]
         )
     }
 }
@@ -401,23 +401,23 @@ private class FullScreenDelegate: NSObject, FullScreenContentDelegate {
     }
 
     func adDidPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdOpened",
-            payload: ["adType": adType]
+            ["adType": adType]
         )
     }
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdClosed",
-            payload: ["adType": adType]
+            ["adType": adType]
         )
     }
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdFailedToLoad",
-            payload: [
+            [
                 "adType": adType,
                 "adUnitId": "",
                 "errorCode": (error as NSError).code,
@@ -427,16 +427,16 @@ private class FullScreenDelegate: NSObject, FullScreenContentDelegate {
     }
 
     func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdImpression",
-            payload: ["adType": adType]
+            ["adType": adType]
         )
     }
 
     func adDidRecordClick(_ ad: FullScreenPresentingAd) {
-        BridgeFunction.dispatchEvent(
+        LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdClicked",
-            payload: ["adType": adType]
+            ["adType": adType]
         )
     }
 }
