@@ -346,9 +346,12 @@ private class BannerEventDelegate: NSObject, BannerViewDelegate {
     }
 
     func bannerViewDidReceiveAd(_ bannerView: BannerView) {
+        // adSize.size.height is the points height AdMob actually allocated for
+        // this banner — the host app needs this to reserve exactly enough
+        // space for its own layout instead of guessing a static value.
         LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdLoaded",
-            ["adType": "banner", "adUnitId": adUnitId]
+            ["adType": "banner", "adUnitId": adUnitId, "heightDp": Int(bannerView.adSize.size.height)]
         )
     }
 

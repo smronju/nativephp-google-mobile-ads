@@ -127,15 +127,21 @@ object GoogleMobileAdsFunctions {
             val sizeKey  = parameters["size"] as? String ?: "adaptive"
 
             mainHandler.post {
+                val adSize = resolveAdSize(sizeKey)
                 val adView = AdView(activity)
                 adView.adUnitId = adUnitId
-                adView.setAdSize(resolveAdSize(sizeKey))
+                adView.setAdSize(adSize)
 
                 adView.adListener = object : AdListener() {
                     override fun onAdLoaded() {
+                        // adSize.height is the dp height AdMob actually allocated for
+                        // this banner (fixed per size/device-width for "adaptive" —
+                        // known immediately, not dependent on which creative loads).
+                        // The host app needs this to reserve exactly enough space
+                        // for its own layout instead of guessing a static value.
                         activity.dispatchAdEvent(
                             "NativePHP\\GoogleMobileAds\\Events\\AdLoaded",
-                            mapOf("adType" to "banner", "adUnitId" to adUnitId)
+                            mapOf("adType" to "banner", "adUnitId" to adUnitId, "heightDp" to adSize.height)
                         )
                     }
                     override fun onAdFailedToLoad(error: LoadAdError) {

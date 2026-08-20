@@ -13,5 +13,6 @@ class AdLoaded
     public function __construct(
         public readonly string $adType,
         public readonly string $adUnitId,
+        public readonly ?int $heightDp = null,
     ) {}
 }
