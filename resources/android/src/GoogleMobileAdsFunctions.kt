@@ -6,6 +6,8 @@ import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdListener
@@ -159,6 +161,22 @@ object GoogleMobileAdsFunctions {
                     FrameLayout.LayoutParams.WRAP_CONTENT,
                     gravity
                 )
+
+                // Added straight to the decor view with no inset awareness, this
+                // rendered flush against the physical edge — on an edge-to-edge
+                // window that's on top of the status bar (position "top") or
+                // behind the gesture/nav bar (position "bottom"), covering system
+                // UI outright. AdMob's own placement policy prohibits ads
+                // overlapping system chrome, so the relevant system-bar inset is
+                // applied as a margin instead of a bare 0.
+                val systemBarInsets = ViewCompat.getRootWindowInsets(activity.window.decorView)
+                    ?.getInsets(WindowInsetsCompat.Type.systemBars())
+                if (position == "top") {
+                    params.topMargin = systemBarInsets?.top ?: 0
+                } else {
+                    params.bottomMargin = systemBarInsets?.bottom ?: 0
+                }
+
                 (activity.window.decorView.rootView as? ViewGroup)?.addView(adView, params)
                 AdHolder.bannerView = adView
 
