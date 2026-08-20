@@ -172,7 +172,15 @@ object GoogleMobileAdsFunctions {
                 val systemBarInsets = ViewCompat.getRootWindowInsets(activity.window.decorView)
                     ?.getInsets(WindowInsetsCompat.Type.systemBars())
                 if (position == "top") {
-                    params.topMargin = systemBarInsets?.top ?: 0
+                    // The system-bar inset alone only clears the status bar, not
+                    // the host app's own top bar (title + actions row) sitting
+                    // below it — this Kotlin code has no visibility into that
+                    // Compose/SwiftUI layout to measure it exactly. Material 3's
+                    // small TopAppBar spec (64dp) is used as a reasonable
+                    // estimate; a host with a taller or shorter top bar will
+                    // need to adjust this.
+                    val estimatedTopBarHeight = (64 * activity.resources.displayMetrics.density).toInt()
+                    params.topMargin = (systemBarInsets?.top ?: 0) + estimatedTopBarHeight
                 } else {
                     // The system-bar inset alone only clears the gesture/nav bar,
                     // not the host app's own bottom tab bar sitting above it —
