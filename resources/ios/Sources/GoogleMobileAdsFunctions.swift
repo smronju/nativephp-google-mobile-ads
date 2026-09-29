@@ -52,9 +52,18 @@ import UIKit
                 window?.addSubview(bannerView)
 
                 bannerView.translatesAutoresizingMaskIntoConstraints = false
+                // The window's safe area stops at the status bar and home indicator;
+                // the host app's own navigation bar and tab bar sit inside it, so the
+                // banner is pushed past those too rather than drawn over them.
                 let verticalAnchor = position == "top"
-                    ? bannerView.topAnchor.constraint(equalTo: window!.safeAreaLayoutGuide.topAnchor)
-                    : bannerView.bottomAnchor.constraint(equalTo: window!.safeAreaLayoutGuide.bottomAnchor)
+                    ? bannerView.topAnchor.constraint(
+                        equalTo: window!.safeAreaLayoutGuide.topAnchor,
+                        constant: Self.hostBarInset(in: window!, top: true)
+                    )
+                    : bannerView.bottomAnchor.constraint(
+                        equalTo: window!.safeAreaLayoutGuide.bottomAnchor,
+                        constant: -Self.hostBarInset(in: window!, top: false)
+                    )
 
                 NSLayoutConstraint.activate([
                     bannerView.centerXAnchor.constraint(equalTo: window!.centerXAnchor),
@@ -65,6 +74,39 @@ import UIKit
             }
 
             return BridgeResponse.success(data: ["status": "loading"])
+        }
+
+        /// How far the host app's own bar reaches past the window's safe area:
+        /// the navigation bar below the status bar for `top`, the tab bar above
+        /// the home indicator for `bottom`. Measured from the visible bar when
+        /// there is one, otherwise the standard UIKit heights (44pt / 49pt), the
+        /// same kind of estimate the Android side uses for its top bar.
+        private static func hostBarInset(in window: UIWindow, top: Bool) -> CGFloat {
+            if top {
+                guard let bar: UINavigationBar = visibleBar(in: window) else { return 44 }
+                let frame = bar.convert(bar.bounds, to: window)
+
+                return max(0, frame.maxY - window.safeAreaInsets.top)
+            }
+
+            guard let bar: UITabBar = visibleBar(in: window) else { return 49 }
+            let frame = bar.convert(bar.bounds, to: window)
+
+            return max(0, window.bounds.height - window.safeAreaInsets.bottom - frame.minY)
+        }
+
+        private static func visibleBar<Bar: UIView>(in view: UIView) -> Bar? {
+            for subview in view.subviews where !subview.isHidden && subview.alpha > 0 {
+                if let bar = subview as? Bar, bar.bounds.height > 0 {
+                    return bar
+                }
+
+                if let bar: Bar = visibleBar(in: subview) {
+                    return bar
+                }
+            }
+
+            return nil
         }
 
         private static func resolveAdSize(_ size: String) -> AdSize {
