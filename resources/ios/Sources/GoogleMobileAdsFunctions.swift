@@ -9,14 +9,14 @@ import UIKit
     @objc public class Initialize: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let appId = parameters["app_id"] as? String, !appId.isEmpty else {
-                return BridgeResponse.error("app_id is required")
+                return BridgeResponse.error(code: "MISSING_PARAM", message: "app_id is required")
             }
 
             DispatchQueue.main.async {
                 MobileAds.shared.start { _ in }
             }
 
-            return BridgeResponse.success(["status": "initialized"])
+            return BridgeResponse.success(data: ["status": "initialized"])
         }
     }
 
@@ -25,7 +25,7 @@ import UIKit
     @objc public class ShowBanner: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let adUnitId = parameters["ad_unit_id"] as? String else {
-                return BridgeResponse.error("ad_unit_id is required")
+                return BridgeResponse.error(code: "MISSING_PARAM", message: "ad_unit_id is required")
             }
 
             let position = parameters["position"] as? String ?? "bottom"
@@ -41,7 +41,9 @@ import UIKit
                 bannerView.rootViewController = rootVC
                 bannerView.adSize = Self.resolveAdSize(size)
 
-                bannerView.eventDelegate = BannerEventDelegate(adUnitId: adUnitId)
+                let bannerDelegate = BannerEventDelegate(adUnitId: adUnitId)
+                bannerView.delegate = bannerDelegate
+                AdViewHolder.shared.bannerDelegate = bannerDelegate
 
                 let request = Request()
                 bannerView.load(request)
@@ -62,7 +64,7 @@ import UIKit
                 AdViewHolder.shared.bannerView = bannerView
             }
 
-            return BridgeResponse.success(["status": "loading"])
+            return BridgeResponse.success(data: ["status": "loading"])
         }
 
         private static func resolveAdSize(_ size: String) -> AdSize {
@@ -72,7 +74,7 @@ import UIKit
             case "medium_rectangle":  return AdSizeMediumRectangle
             default:
                 let width = UIScreen.main.bounds.width
-                return currentOrientationAnchoredAdaptiveBanner(withWidth: width)
+                return currentOrientationAnchoredAdaptiveBanner(width: width)
             }
         }
     }
@@ -83,7 +85,7 @@ import UIKit
                 AdViewHolder.shared.bannerView?.removeFromSuperview()
                 AdViewHolder.shared.bannerView = nil
             }
-            return BridgeResponse.success(["status": "hidden"])
+            return BridgeResponse.success(data: ["status": "hidden"])
         }
     }
 
@@ -92,12 +94,12 @@ import UIKit
     @objc public class LoadInterstitial: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let adUnitId = parameters["ad_unit_id"] as? String else {
-                return BridgeResponse.error("ad_unit_id is required")
+                return BridgeResponse.error(code: "MISSING_PARAM", message: "ad_unit_id is required")
             }
 
             DispatchQueue.main.async {
                 InterstitialAd.load(
-                    withAdUnitID: adUnitId,
+                    with: adUnitId,
                     request: Request()
                 ) { ad, error in
                     if let error = error {
@@ -121,14 +123,14 @@ import UIKit
                 }
             }
 
-            return BridgeResponse.success(["status": "loading"])
+            return BridgeResponse.success(data: ["status": "loading"])
         }
     }
 
     @objc public class ShowInterstitial: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let ad = AdViewHolder.shared.interstitial else {
-                return BridgeResponse.error("No interstitial ad loaded. Call LoadInterstitial first.")
+                return BridgeResponse.error(code: "NOT_LOADED", message: "No interstitial ad loaded. Call LoadInterstitial first.")
             }
 
             DispatchQueue.main.async {
@@ -137,10 +139,10 @@ import UIKit
                 ad.fullScreenContentDelegate = delegate
                 AdViewHolder.shared.interstitialDelegate = delegate
                 AdViewHolder.shared.interstitial = nil
-                ad.present(fromRootViewController: rootVC)
+                ad.present(from: rootVC)
             }
 
-            return BridgeResponse.success(["status": "showing"])
+            return BridgeResponse.success(data: ["status": "showing"])
         }
     }
 
@@ -149,12 +151,12 @@ import UIKit
     @objc public class LoadRewarded: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let adUnitId = parameters["ad_unit_id"] as? String else {
-                return BridgeResponse.error("ad_unit_id is required")
+                return BridgeResponse.error(code: "MISSING_PARAM", message: "ad_unit_id is required")
             }
 
             DispatchQueue.main.async {
                 RewardedAd.load(
-                    withAdUnitID: adUnitId,
+                    with: adUnitId,
                     request: Request()
                 ) { ad, error in
                     if let error = error {
@@ -178,14 +180,14 @@ import UIKit
                 }
             }
 
-            return BridgeResponse.success(["status": "loading"])
+            return BridgeResponse.success(data: ["status": "loading"])
         }
     }
 
     @objc public class ShowRewarded: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let ad = AdViewHolder.shared.rewarded else {
-                return BridgeResponse.error("No rewarded ad loaded. Call LoadRewarded first.")
+                return BridgeResponse.error(code: "NOT_LOADED", message: "No rewarded ad loaded. Call LoadRewarded first.")
             }
 
             DispatchQueue.main.async {
@@ -195,7 +197,7 @@ import UIKit
                 AdViewHolder.shared.rewardedDelegate = delegate
                 AdViewHolder.shared.rewarded = nil
 
-                ad.present(fromRootViewController: rootVC) {
+                ad.present(from: rootVC) {
                     let reward = ad.adReward
                     LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\RewardEarned",
@@ -207,7 +209,7 @@ import UIKit
                 }
             }
 
-            return BridgeResponse.success(["status": "showing"])
+            return BridgeResponse.success(data: ["status": "showing"])
         }
     }
 
@@ -216,12 +218,12 @@ import UIKit
     @objc public class LoadRewardedInterstitial: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let adUnitId = parameters["ad_unit_id"] as? String else {
-                return BridgeResponse.error("ad_unit_id is required")
+                return BridgeResponse.error(code: "MISSING_PARAM", message: "ad_unit_id is required")
             }
 
             DispatchQueue.main.async {
                 RewardedInterstitialAd.load(
-                    withAdUnitID: adUnitId,
+                    with: adUnitId,
                     request: Request()
                 ) { ad, error in
                     if let error = error {
@@ -245,14 +247,14 @@ import UIKit
                 }
             }
 
-            return BridgeResponse.success(["status": "loading"])
+            return BridgeResponse.success(data: ["status": "loading"])
         }
     }
 
     @objc public class ShowRewardedInterstitial: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let ad = AdViewHolder.shared.rewardedInterstitial else {
-                return BridgeResponse.error("No rewarded interstitial ad loaded. Call LoadRewardedInterstitial first.")
+                return BridgeResponse.error(code: "NOT_LOADED", message: "No rewarded interstitial ad loaded. Call LoadRewardedInterstitial first.")
             }
 
             DispatchQueue.main.async {
@@ -262,7 +264,7 @@ import UIKit
                 AdViewHolder.shared.rewardedInterstitialDelegate = delegate
                 AdViewHolder.shared.rewardedInterstitial = nil
 
-                ad.present(fromRootViewController: rootVC, userDidEarnRewardHandler: {
+                ad.present(from: rootVC, userDidEarnRewardHandler: {
                     let reward = ad.adReward
                     LaravelBridge.shared.send?(
                         "NativePHP\\GoogleMobileAds\\Events\\RewardEarned",
@@ -274,7 +276,7 @@ import UIKit
                 })
             }
 
-            return BridgeResponse.success(["status": "showing"])
+            return BridgeResponse.success(data: ["status": "showing"])
         }
     }
 
@@ -283,12 +285,12 @@ import UIKit
     @objc public class LoadAppOpen: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let adUnitId = parameters["ad_unit_id"] as? String else {
-                return BridgeResponse.error("ad_unit_id is required")
+                return BridgeResponse.error(code: "MISSING_PARAM", message: "ad_unit_id is required")
             }
 
             DispatchQueue.main.async {
                 AppOpenAd.load(
-                    withAdUnitID: adUnitId,
+                    with: adUnitId,
                     request: Request()
                 ) { ad, error in
                     if let error = error {
@@ -312,14 +314,14 @@ import UIKit
                 }
             }
 
-            return BridgeResponse.success(["status": "loading"])
+            return BridgeResponse.success(data: ["status": "loading"])
         }
     }
 
     @objc public class ShowAppOpen: NSObject, BridgeFunction {
         public func execute(parameters: [String: Any]) -> [String: Any] {
             guard let ad = AdViewHolder.shared.appOpen else {
-                return BridgeResponse.error("No app open ad loaded. Call LoadAppOpen first.")
+                return BridgeResponse.error(code: "NOT_LOADED", message: "No app open ad loaded. Call LoadAppOpen first.")
             }
 
             DispatchQueue.main.async {
@@ -328,10 +330,10 @@ import UIKit
                 ad.fullScreenContentDelegate = delegate
                 AdViewHolder.shared.appOpenDelegate = delegate
                 AdViewHolder.shared.appOpen = nil
-                ad.present(fromRootViewController: rootVC)
+                ad.present(from: rootVC)
             }
 
-            return BridgeResponse.success(["status": "showing"])
+            return BridgeResponse.success(data: ["status": "showing"])
         }
     }
 }
@@ -403,7 +405,7 @@ private class FullScreenDelegate: NSObject, FullScreenContentDelegate {
         self.adType = adType
     }
 
-    func adDidPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
+    func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
         LaravelBridge.shared.send?(
             "NativePHP\\GoogleMobileAds\\Events\\AdOpened",
             ["adType": adType]
@@ -450,6 +452,7 @@ private class AdViewHolder {
     static let shared = AdViewHolder()
 
     var bannerView: BannerView?
+    var bannerDelegate: BannerEventDelegate?
     var interstitial: InterstitialAd?
     var interstitialDelegate: FullScreenDelegate?
     var rewarded: RewardedAd?
